@@ -56,11 +56,12 @@ def visualize(b1, b2, alpha, step):
 
 def colorgradient(d1_over_d2, alpha):
     point_dict = {}
-    for b1 in range(-10, 10):
-        for b2 in range(-10, 10):
+    for b1 in np.arange(0, 1, alpha/10):
+        for b2 in np.arange(0, 1, alpha/10):
             point = (b1, b2)
-            prob = approximate_flip(b1, b2, d1_over_d2, alpha)
-            point_dict[point] = prob
+            if b1 != 0 and b1 + alpha != 0 and b1 - alpha != 0:
+                prob = approximate_flip(b1, b2, d1_over_d2, alpha)
+                point_dict[point] = prob
 
     red_x = [] # 
     red_y = []
@@ -76,11 +77,16 @@ def colorgradient(d1_over_d2, alpha):
     indigo_y = []
     purple_x = []
     purple_y = []
+    xs = np.arange(0, 1, alpha/10)
+    ys = []
+    for x in xs:
+        y = d1_over_d2 * x
+        ys.append(y)
 
     for pointpair in point_dict:
         x = pointpair[0]
         y = pointpair[1]
-        if point_dict[pointpair] >= 0.5:
+        if point_dict[pointpair] == 0.5:
             red_x.append(x)
             red_y.append(y)
         elif point_dict[pointpair] >= 0.4:
@@ -102,14 +108,17 @@ def colorgradient(d1_over_d2, alpha):
             purple_x.append(x)
             purple_y.append(y)
     
-    plt.plot(red_x, red_y, 'o', color="red", label="flip probability >= 0.5")
+    plt.plot(red_x, red_y, 'o', color="red", label="flip probability = 0.5")
     plt.plot(orange_x, orange_y, 'o', color="orange", label="flip probability >= 0.4")
     plt.plot(yellow_x, yellow_y, 'o', color="yellow", label="flip probability >= 0.3")
     plt.plot(green_x, green_y, 'o', color="green", label="flip probability >= 0.2")
     plt.plot(blue_x, blue_y, 'o', color="blue", label="flip probability >= 0.1")
     plt.plot(indigo_x, indigo_y, 'o', color="indigo", label="flip probability > 0.0")
-    plt.plot(purple_x, purple_y, 'x', color="#B19CD9", label="flip probability = 0.0")
-    plt.legend(loc="upper left")
+    # plt.plot(purple_x, purple_y, 'x', color="#B19CD9", label="flip probability = 0.0")
+    plt.plot(xs, ys, color="black")
+    plt.xlim(alpha, 1)
+    plt.ylim(0, 1)
+    plt.legend(loc="lower right")
     title = "d1_over_d2 = " + str(d1_over_d2) + ", a = " + str(alpha) 
     plt.title(title)
     plt.xlabel("b1 value")
@@ -118,5 +127,5 @@ def colorgradient(d1_over_d2, alpha):
     plt.savefig(title + '.png')
     plt.show()
 
-colorgradient(4, 0.5)
+colorgradient(2, 0.1)
 # visualize(3, 7, 2, 0.1)
