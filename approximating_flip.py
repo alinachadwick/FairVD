@@ -44,7 +44,7 @@ def visualize(b1, b2, alpha, step):
     xpoints = np.array(x_vals)
     ypoints = np.array(y_vals)
     # return (xpoints, ypoints)
-    plt.plot(x_vals, y_vals, 'o')
+    plt.plot(x_vals, y_vals, '.')
     title = "b1 = " + str(b1) + ", b2 = " + str(b2) + ", a = " + str(alpha) + ", step = " + str(step)
     plt.title(title)
     plt.xlabel("d1/d2 value")
@@ -54,10 +54,10 @@ def visualize(b1, b2, alpha, step):
     plt.show()
 
 
-def colorgradient(d1_over_d2, alpha):
+def colorgradient(d1_over_d2, alpha, lim):
     point_dict = {}
-    for b1 in np.arange(0, 1, alpha/10):
-        for b2 in np.arange(0, 1, alpha/10):
+    for b1 in np.arange(0, lim, alpha/10):
+        for b2 in np.arange(0, lim, alpha/10):
             point = (b1, b2)
             if b1 != 0 and b1 + alpha != 0 and b1 - alpha != 0:
                 prob = approximate_flip(b1, b2, d1_over_d2, alpha)
@@ -77,7 +77,7 @@ def colorgradient(d1_over_d2, alpha):
     indigo_y = []
     purple_x = []
     purple_y = []
-    xs = np.arange(0, 1, alpha/10)
+    xs = np.arange(0, lim, alpha/10)
     ys = []
     for x in xs:
         y = d1_over_d2 * x
@@ -89,7 +89,7 @@ def colorgradient(d1_over_d2, alpha):
         if point_dict[pointpair] == 0.5:
             red_x.append(x)
             red_y.append(y)
-        elif point_dict[pointpair] >= 0.4:
+        elif point_dict[pointpair] == 0.4:
             orange_x.append(x)
             orange_y.append(y)
         elif point_dict[pointpair] >= 0.3:
@@ -108,17 +108,17 @@ def colorgradient(d1_over_d2, alpha):
             purple_x.append(x)
             purple_y.append(y)
     
-    plt.plot(red_x, red_y, 'o', color="red", label="flip probability = 0.5")
-    plt.plot(orange_x, orange_y, 'o', color="orange", label="flip probability >= 0.4")
-    plt.plot(yellow_x, yellow_y, 'o', color="yellow", label="flip probability >= 0.3")
-    plt.plot(green_x, green_y, 'o', color="green", label="flip probability >= 0.2")
-    plt.plot(blue_x, blue_y, 'o', color="blue", label="flip probability >= 0.1")
-    plt.plot(indigo_x, indigo_y, 'o', color="indigo", label="flip probability > 0.0")
+    # plt.plot(red_x, red_y, '.', color="red", label="flip probability = 0.5")
+    plt.plot(orange_x, orange_y, color="orange", label="flip probability = 0.4")
+    # plt.plot(yellow_x, yellow_y, '.', color="yellow", label="flip probability >= 0.3")
+    # plt.plot(green_x, green_y, '.', color="green", label="flip probability >= 0.2")
+    # plt.plot(blue_x, blue_y, '.', color="blue", label="flip probability >= 0.1")
+    # plt.plot(indigo_x, indigo_y, '.', color="indigo", label="flip probability > 0.0")
     # plt.plot(purple_x, purple_y, 'x', color="#B19CD9", label="flip probability = 0.0")
     plt.plot(xs, ys, color="black")
-    plt.xlim(alpha, 1)
-    plt.ylim(0, 1)
-    plt.legend(loc="lower right")
+    plt.xlim(alpha, lim)
+    plt.ylim(0, lim)
+    plt.legend(loc="upper left")
     title = "d1_over_d2 = " + str(d1_over_d2) + ", a = " + str(alpha) 
     plt.title(title)
     plt.xlabel("b1 value")
@@ -127,5 +127,6 @@ def colorgradient(d1_over_d2, alpha):
     plt.savefig(title + '.png')
     plt.show()
 
-colorgradient(2, 0.1)
+
+# colorgradient(.4, 0.01, .1)
 # visualize(3, 7, 2, 0.1)
