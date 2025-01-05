@@ -43,40 +43,47 @@ def get_ranked_scores(alphas, betas):
 	for i in range(len(betas)):
 		scores.append(alphas*betas[i])
 	votersScores = np.dot(alphas, betas.T).T
-	return votersScores, np.array([sorted(range(len(vs)), key = lambda x: vs[x], reverse= True) for vs in votersScores])
-		  
-# Parameters:
-alphas = np.array([[0.5, 0.4, 0.5],
-				   [0.3, 0.6, 0.2],
-				   [0.6, 0.2, 0.3]]) # rows is metrics, column is functions
-betas = np.array([[0.6, 0.5, 0.4],
-				  [0.4, 0.5, 0.6]]) # row is voter, column is beta value per function
-gamma = 1
-sample = 5000
+	return votersScores, np.array([indexes_sortByVal(vs) for vs in votersScores])
 
-print_matrix(alphas)
+def indexes_sortByVal(l, reverse = True):
+	return sorted(range(len(l)), key = lambda x: l[x], reverse = reverse)
+
+if __name__ == "__main__":
+	# Parameters:
+	alphas = np.array([[0.5, 0.4],
+					[0.3, 0.6],
+					[0.6, 0.2]])  # rows are metrics, columns are functions
+
+	betas = np.array([[0.6, 0.5],
+					[0.4, 0.7],
+					[0.7, 0.3]])  # rows are voter preference points
+
+	gamma = 0.1
+	sample = 5000
+
+	print_matrix(alphas)
 
 
-print("True scores & preferences:\n----------")
-votersScores, votersRankings = get_ranked_scores(alphas, betas)
+	print("True scores & preferences:\n----------")
+	votersScores, votersRankings = get_ranked_scores(alphas, betas)
 
-for voter in range(len(betas)):
-	print("Voter %d's scores:"%voter + str(dict(enumerate(votersScores[voter]))))
-	print("         rankings:" + str(votersRankings[voter]))
+	for voter in range(len(betas)):
+		print("Voter %d's scores:"%voter + str(dict(enumerate(votersScores[voter]))))
+		print("         rankings:" + str(votersRankings[voter]))
 
-counter = [{} for i in betas]
-for s in range(sample):
-	errorMat = np.random.rand(betas.shape[0], betas.shape[1])*gamma # assumes uniform probability
-	simBeta = betas.copy()
-	simBeta += errorMat
-	scores, ranking = get_ranked_scores(alphas, simBeta)
-	for i, r in enumerate(ranking):
-		if str(r) in counter[i]:
-			counter[i][str(r)] += 1
-		else:
-			counter[i][str(r)] = 1
+	counter = [{} for i in betas]
+	for s in range(sample):
+		errorMat = np.random.rand(betas.shape[0], betas.shape[1])*gamma # assumes uniform probability
+		simBeta = betas.copy()
+		simBeta += errorMat
+		scores, ranking = get_ranked_scores(alphas, simBeta)
+		for i, r in enumerate(ranking):
+			if str(r) in counter[i]:
+				counter[i][str(r)] += 1
+			else:
+				counter[i][str(r)] = 1
 
-# normalizing to probability
-counter = [{i:c[i]/sample for i in c.keys()} for c in counter]
+	# normalizing to probability
+	counter = [{i:c[i]/sample for i in c.keys()} for c in counter]
 
-print(counter)
+	print(counter)
