@@ -45,8 +45,27 @@ def get_ranked_scores(alphas, betas):
 	votersScores = np.dot(alphas, betas.T).T
 	return votersScores, np.array([indexes_sortByVal(vs) for vs in votersScores])
 
-def indexes_sortByVal(l, reverse = True):
+def indexes_sortByVal(l, reverse = True): # current
 	return sorted(range(len(l)), key = lambda x: l[x], reverse = reverse)
+
+def indexSortWithTies(l, reverse = True):
+	sortedIndexes = indexes_sortByVal(l, reverse = reverse)
+	prevScore = float("inf")
+	indexesWithTies = []
+	currTieSet = set()
+	for i in sortedIndexes:
+		val = l[i]
+		if val == prevScore:
+			currTieSet.add(i)
+		else:
+			if len(currTieSet) == 0:
+				indexesWithTies.append({i})
+			else:
+				indexesWithTies.append(currTieSet)
+				currTieSet = set()
+	if len(currTieSet) == 0:
+		indexesWithTies.add(currTieSet)
+	return indexesWithTies
 
 if __name__ == "__main__":
 	# Parameters:

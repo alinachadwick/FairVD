@@ -21,10 +21,10 @@ def generate_alphas(m: int, k: int, bounds: tuple = (0.0, 1.0), gaussian: bool =
 def generate_betas(n: int, k: int, bounds: tuple = (0.0, 1.0), case:int = 0, sd: float = 1.0, space_param: float = 0.5):
 	'''
 	case:
-	0 -> uniformly drawn from across bounds
-	1 -> antagonistically normally drawn
-	2 -> normally drawn from same mean
-	3 -> uniformly drawn from two bounds
+	0 -> (HU) uniformly drawn from across bounds
+	1 -> (AN) antagonistically normally drawn
+	2 -> (HN) normally drawn from same mean
+	3 -> (AU) uniformly drawn from two bounds
 
 	space_param should be a float between 0 and 1. In each case refers to:
 	case 0: does nothing
@@ -33,16 +33,16 @@ def generate_betas(n: int, k: int, bounds: tuple = (0.0, 1.0), case:int = 0, sd:
 	case 3: uniform distribution bounds = (bounds[0], bounds[0]+space_param*(bounds[1]- bounds[0])), (bounds[1]- space_param*(bounds[1]-bounds[0], bounds[1]))
 
 	'''
-	if case == 1: # antagonistic & normal
+	if case == 1: # AN: antagonistic & normal
 		smaller_mean = (0.5 - 0.5 * space_param)*(bounds[1] - bounds[0]) + bounds[0]
 		larger_mean = (0.5 + 0.5 * space_param)*(bounds[1] - bounds[0]) + bounds[0]
 		smaller_betas = normalize_to_bounds(np.random.normal(smaller_mean, sd/2, size =(floor(n/2), k)), bounds)
 		larger_betas = normalize_to_bounds(np.random.normal(larger_mean, sd/2, size =(ceil(n/2), k)), bounds)
 		unnorm_betas = np.vstack([smaller_betas, larger_betas])
-	elif case == 2: # normally distributed betas around center point
+	elif case == 2: # HN: normally distributed betas around center point
 		mean = space_param*(bounds[1] -bounds[0]) + bounds[0]
 		unnorm_betas = np.random.normal(mean, sd, size = (n, k))
-	elif case == 3: # antagonistic & uniform
+	elif case == 3: # AU: antagonistic & uniform
 		smaller_bounds = (bounds[0], bounds[0]+(0.5*space_param)*(bounds[1]- bounds[0]))
 		larger_bounds = (bounds[1] - (0.5*space_param)*(bounds[1]-bounds[0]), bounds[1])
 		smaller_betas = generate_betas(floor(n/2), k, smaller_bounds, case = 0, sd = sd)

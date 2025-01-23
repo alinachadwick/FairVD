@@ -4,17 +4,17 @@ from itertools import combinations
 import matplotlib.patches as patches
 
 # Fixed alphas and betas values for 2D case
-# alphas = np.array([[0.5, 0.4],
-#                    [0.3, 0.6],
-#                    [0.6, 0.2]])  # rows are metrics, columns are functions
+alphas = np.array([[0.5, 0.4],
+                   [0.3, 0.6],
+                   [0.6, 0.2]])  # rows are metrics, columns are functions
 
-# betas = np.array([[0.6, 0.5],
-#                   [0.4, 0.7],
-#                   [0.7, 0.3]])  # rows are voter preference points
-
-alphas = np.array([[0.5,0.4],[0.4,0.3]])
 betas = np.array([[0.6, 0.5],
-                  [0.7, 0.3]])
+                  [0.4, 0.7],
+                  [0.7, 0.3]])  # rows are voter preference points
+
+# alphas = np.array([[0.5,0.4],[0.4,0.3]])
+# betas = np.array([[0.6, 0.5],
+#                   [0.7, 0.3]])
 gamma = 0.1
 sample = 5000
 
@@ -56,7 +56,7 @@ for i, (point, label) in enumerate(zip(points, point_labels)):
 
 # Set axis limits and labels
 ax.set_xlim([0, 1])
-ax.set_ylim([-1, 1])
+ax.set_ylim([0, 1])
 ax.set_xlabel("Fairness Notion 1 Weight")
 ax.set_ylabel("Fairness Notion 2 Weight")
 
@@ -66,4 +66,4 @@ ax.legend(handles=handles, loc="upper left")
 plt.gca().set_aspect('equal')
 
 # Show plot
-plt.show()
+plt.savefig("2dPrefPlot.pdf", format = "pdf", bbox_inches = "tight")
