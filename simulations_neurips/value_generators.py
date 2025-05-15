@@ -1,11 +1,9 @@
 import numpy as np
-from itertools import permutations
 from math import floor, ceil
-
 
 def normalize_to_bounds(x, bounds):
 	return x
-	return np.minimum(bounds[1], np.maximum(bounds[0], bounds[0] + (x - bounds[0])/(bounds[1]- bounds[0])))
+	# return (x - bounds[0])/(bounds[1] - bounds[0]) + bounds[0]
 
 def generate_alphas(m: int, k: int, bounds: tuple = (0.0, 1.0), gaussian: bool = False, true_distribution = [], sd: float = 1.0):
 	if not gaussian:
@@ -17,6 +15,24 @@ def generate_alphas(m: int, k: int, bounds: tuple = (0.0, 1.0), gaussian: bool =
 		else:
 			unnorm_alpha = np.random.normal(true_distribution, sd)
 	return normalize_to_bounds(unnorm_alpha, bounds)
+
+def generate_uniform_corr_alphas(m: int, k: int, intra: int, inter: int, lower_bound: int = 0.0):
+    matrix = np.zeros((m, k))
+    
+    for i in range(m):
+        low = lower_bound + (i * inter)
+        high = low + intra
+        matrix[i] = np.random.uniform(low, high, k)
+    
+    return matrix
+
+def generate_normal_corr_alphas(m: int, k: int, intra: int, inter: int, lower_bound: int = 0.0):
+	matrix = np.zeros((m,k))
+
+	for i in range(m):
+		mean = lower_bound + (i * inter)
+		matrix[i] = np.random.normal(mean, intra/2, k)
+	return matrix
 
 def generate_betas(n: int, k: int, bounds: tuple = (0.0, 1.0), case:int = 0, sd: float = 1.0, space_param: float = 0.5):
 	'''
@@ -57,4 +73,4 @@ def generate_epsilon(n: int, k: int, bounds: tuple = (-0.1, 0.1), normal = False
 	if normal:
 		return np.random.normal(mean_error, sd, size = (n, k))
 	else:
-		return normalize_to_bounds(np.random.rand(n, k), bounds)
+		return bounds[0] + (np.random.rand(n, k))*(bounds[1] - bounds[0])
