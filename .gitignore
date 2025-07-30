@@ -1,1 +1,3 @@
-simulation_neurips/output/*
+simulations_neurips/output/*
+simulations_neurips/input/*
+simulations_neurips/__pycache__/

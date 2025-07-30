@@ -145,3 +145,181 @@ def kendall_tau_distance_with_ties(x, y, tieListX, tieListY, tiePenalty=True, ar
                     partial += 0.5
 
         return (disc + partial) / max_pairs
+
+def ranked_pairs(voterRankings):
+    m = voterRankings.shape[1]  # number of candidates
+    n = voterRankings.shape[0]  # number of voters
+
+    # Precompute rankings as positional lookups for each candidate
+    position_lookup = np.argsort(voterRankings, axis=1)  # Shape: (n, m)
+    
+    # Calculate pairwise margins
+    pairwise_margins = np.zeros((m, m), dtype=int)
+    
+    for i in range(m):
+        for j in range(i + 1, m):  # Only need to compare i < j
+            # Count wins for i vs j
+            wins_for_i = np.sum(position_lookup[:, i] < position_lookup[:, j])
+            wins_for_j = n - wins_for_i
+            
+            margin = wins_for_i - wins_for_j
+            if margin > 0:
+                pairwise_margins[i, j] = margin
+                pairwise_margins[j, i] = -margin
+            elif margin < 0:
+                pairwise_margins[j, i] = -margin
+                pairwise_margins[i, j] = margin
+    
+    # Create list of all pairwise comparisons with their margins
+    pairs = []
+    for i in range(m):
+        for j in range(m):
+            if i != j and pairwise_margins[i, j] > 0:
+                pairs.append((i, j, pairwise_margins[i, j]))
+    
+    # Sort pairs by margin in descending order (strongest defeats first)
+    pairs.sort(key=lambda x: x[2], reverse=True)
+    
+    # Build directed graph using ranked pairs algorithm
+    # Start with empty graph and add edges that don't create cycles
+    graph = np.zeros((m, m), dtype=bool)
+    
+    def creates_cycle(graph, start, end):
+        """Check if adding edge start->end would create a cycle"""
+        if start == end:
+            return True
+        
+        # Use DFS to check if there's already a path from end to start
+        visited = np.zeros(m, dtype=bool)
+        stack = [end]
+        
+        while stack:
+            current = stack.pop()
+            if current == start:
+                return True
+            if visited[current]:
+                continue
+            visited[current] = True
+            
+            # Add all nodes that current points to
+            for next_node in range(m):
+                if graph[current, next_node] and not visited[next_node]:
+                    stack.append(next_node)
+        
+        return False
+    
+    # Add edges in order of decreasing margin, skipping those that create cycles
+    for winner, loser, margin in pairs:
+        if not creates_cycle(graph, winner, loser):
+            graph[winner, loser] = True
+    
+    # Calculate final ranking based on the tournament graph
+    # Count the number of candidates each candidate beats
+    beats_count = np.sum(graph, axis=1)
+    
+    # Return indices sorted by number of victories (descending order)
+    return np.argsort(-beats_count)
+
+def minimax_condorcet(voterRankings):
+    m = voterRankings.shape[1]  # number of candidates
+    n = voterRankings.shape[0]  # number of voters
+
+    # Precompute rankings as positional lookups for each candidate
+    position_lookup = np.argsort(voterRankings, axis=1)  # Shape: (n, m)
+    
+    # Calculate pairwise defeat margins
+    pairwise_margins = np.zeros((m, m), dtype=int)
+    
+    for i in range(m):
+        for j in range(i + 1, m):  # Only need to compare i < j
+            # Count wins for i vs j
+            wins_for_i = np.sum(position_lookup[:, i] < position_lookup[:, j])
+            wins_for_j = n - wins_for_i
+            
+            margin_i_over_j = wins_for_i - wins_for_j
+            margin_j_over_i = wins_for_j - wins_for_i
+            
+            # Store the margin by which each candidate beats the other
+            # Positive values mean the row candidate beats the column candidate
+            if margin_i_over_j > 0:
+                pairwise_margins[i, j] = margin_i_over_j
+                pairwise_margins[j, i] = 0  # j doesn't beat i
+            elif margin_j_over_i > 0:
+                pairwise_margins[j, i] = margin_j_over_i
+                pairwise_margins[i, j] = 0  # i doesn't beat j
+            # If tied, both remain 0
+    
+    # Calculate minimax scores
+    # For each candidate, find their worst defeat (largest margin they lose by)
+    minimax_scores = np.zeros(m)
+    
+    for i in range(m):
+        # Find the largest margin by which candidate i is defeated
+        worst_defeat = 0
+        for j in range(m):
+            if i != j and pairwise_margins[j, i] > worst_defeat:
+                worst_defeat = pairwise_margins[j, i]
+        minimax_scores[i] = worst_defeat
+    
+    # Return indices sorted by minimax scores (ascending order - lower is better)
+    # We negate to get descending order since lower minimax scores are better
+    return np.argsort(minimax_scores)
+
+def schulze(voterRankings):
+    m = voterRankings.shape[1]  # number of candidates
+    n = voterRankings.shape[0]  # number of voters
+
+    # Precompute rankings as positional lookups for each candidate
+    position_lookup = np.argsort(voterRankings, axis=1)  # Shape: (n, m)
+    
+    # Calculate pairwise preferences matrix
+    pairwise_preferences = np.zeros((m, m), dtype=int)
+    
+    for i in range(m):
+        for j in range(m):
+            if i != j:
+                # Count how many voters prefer candidate i over candidate j
+                preferences_i_over_j = np.sum(position_lookup[:, i] < position_lookup[:, j])
+                pairwise_preferences[i, j] = preferences_i_over_j
+    
+    # Initialize the strongest path matrix
+    # strongest_paths[i][j] = strength of strongest path from i to j
+    strongest_paths = np.zeros((m, m), dtype=int)
+    
+    # Initialize direct strengths between candidates
+    for i in range(m):
+        for j in range(m):
+            if i != j:
+                if pairwise_preferences[i, j] > pairwise_preferences[j, i]:
+                    # i beats j directly
+                    strongest_paths[i, j] = pairwise_preferences[i, j]
+                else:
+                    # i doesn't beat j directly
+                    strongest_paths[i, j] = 0
+    
+    # Floyd-Warshall algorithm to find strongest paths
+    # For each intermediate candidate k
+    for k in range(m):
+        # For each pair of candidates i, j
+        for i in range(m):
+            for j in range(m):
+                if i != j and i != k and j != k:
+                    # Check if path i->k->j is stronger than direct path i->j
+                    # Strength of path is the minimum of its weakest link
+                    path_strength = min(strongest_paths[i, k], strongest_paths[k, j])
+                    if path_strength > strongest_paths[i, j]:
+                        strongest_paths[i, j] = path_strength
+    
+    # Calculate Schulze scores
+    # A candidate's score is the number of other candidates they beat
+    # (have a stronger path to than the reverse path)
+    schulze_scores = np.zeros(m, dtype=int)
+    
+    for i in range(m):
+        for j in range(m):
+            if i != j:
+                if strongest_paths[i, j] > strongest_paths[j, i]:
+                    schulze_scores[i] += 1
+    
+    # Return indices sorted by Schulze scores (descending order)
+    return np.argsort(-schulze_scores)
